@@ -1,0 +1,5 @@
+{
+  "name": "Calculadora de Equipaje",
+  "description": "Calcula si las dimensiones de tu equipaje cumplen con los límites de las aerolíneas y destinos.",
+  "requestFramePermissions": []
+}
