@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { Luggage, Briefcase, Backpack, Info, CheckCircle2, AlertCircle, ChevronDown, Weight, Ruler, Scale } from 'lucide-react';
+import React, { useState } from 'react';
+import { Luggage, Briefcase, Backpack, Info, CheckCircle2, AlertCircle, ChevronDown, Ruler, Scale, PlaneTakeoff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Predefined limits for different regions/airlines
@@ -51,7 +51,6 @@ export default function App() {
   const [unit, setUnit] = useState<Unit>('metric');
   const [destination, setDestination] = useState(DESTINATIONS[0]);
   const [luggageType, setLuggageType] = useState(LUGGAGE_TYPES[2]); // Default to Checked
-  const [isDestDropdownOpen, setIsDestDropdownOpen] = useState(false);
 
   const totalLinear = length + width + height;
   const lengthUnit = unit === 'metric' ? 'cm' : 'in';
@@ -59,7 +58,7 @@ export default function App() {
 
   // Validation Logic
   const getValidation = () => {
-    if (length <= 0 || width <= 0 || height <= 0) return { status: 'idle', message: 'Ingresa dimensiones', dimStatus: 'idle', weightStatus: 'idle' };
+    if (length <= 0 || width <= 0 || height <= 0) return { status: 'idle', message: 'Ingresa las dimensiones de tu equipaje', dimStatus: 'idle', weightStatus: 'idle' };
 
     let dimStatus: 'valid' | 'warning' | 'invalid' = 'valid';
     let weightStatus: 'valid' | 'invalid' = weight <= (unit === 'metric' ? luggageType.maxWeight.kg : luggageType.maxWeight.lb) ? 'valid' : 'invalid';
@@ -87,15 +86,15 @@ export default function App() {
 
     if (dimStatus === 'invalid' || weightStatus === 'invalid') {
       status = 'invalid';
-      if (dimStatus === 'invalid' && weightStatus === 'invalid') message = 'Dimensiones y peso excedidos';
-      else if (dimStatus === 'invalid') message = 'Dimensiones excedidas';
-      else message = 'Peso excedido';
+      if (dimStatus === 'invalid' && weightStatus === 'invalid') message = 'Dimensiones y peso exceden el límite permitido.';
+      else if (dimStatus === 'invalid') message = 'Las dimensiones exceden el límite permitido.';
+      else message = 'El peso excede el límite permitido.';
     } else if (dimStatus === 'warning') {
       status = 'warning';
-      message = 'Cerca del límite (62-63"). Podría aplicar cargo extra.';
+      message = 'Estás muy cerca del límite (62-63"). Algunas aerolíneas podrían aplicar cargos extra.';
     } else {
       status = 'valid';
-      message = '¡Todo en orden!';
+      message = '¡Todo en orden! Tu equipaje cumple con las normativas.';
     }
 
     return { status, message, dimStatus, weightStatus };
@@ -125,142 +124,121 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-[#1a1a1a] font-sans p-4 md:p-8">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <header className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F4F4F5] text-[#18181B] font-sans selection:bg-black selection:text-white">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white border-b border-zinc-200 px-6 py-4 sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-black p-2.5 rounded-2xl shadow-lg shadow-black/10">
-              <Luggage className="text-white w-6 h-6" />
+            <div className="bg-zinc-900 p-2 rounded-xl">
+              <PlaneTakeoff className="text-white w-5 h-5" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">PackCheck</h1>
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Calculadora Pro</p>
-            </div>
+            <span className="text-lg font-semibold tracking-tight">PackCheck</span>
           </div>
           <button 
             onClick={toggleUnit}
-            className="bg-white border border-black/5 shadow-sm px-5 py-2.5 rounded-2xl text-sm font-bold hover:bg-gray-50 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-4 py-2 rounded-full text-sm font-medium transition-colors"
           >
-            {unit === 'metric' ? 'MÉTRICO (CM/KG)' : 'IMPERIAL (IN/LB)'}
+            <Scale className="w-4 h-4" />
+            {unit === 'metric' ? 'Métrico (cm/kg)' : 'Imperial (in/lb)'}
           </button>
-        </header>
+        </div>
+      </nav>
 
+      <div className="max-w-5xl mx-auto p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Configuration */}
-          <div className="lg:col-span-8 space-y-6">
-            <main className="bg-white rounded-[32px] shadow-sm border border-black/5 overflow-hidden">
-              {/* Type Selector */}
-              <div className="p-6 bg-gray-50/50 border-b border-black/5">
-                <label className="text-[11px] uppercase tracking-wider font-bold text-gray-400 mb-4 block">Tipo de Equipaje</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {LUGGAGE_TYPES.map((type) => {
-                    const Icon = type.icon;
-                    const isActive = luggageType.id === type.id;
-                    return (
-                      <button
-                        key={type.id}
-                        onClick={() => setLuggageType(type)}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-[24px] border-2 transition-all ${
-                          isActive 
-                            ? 'bg-black border-black text-white shadow-xl shadow-black/10' 
-                            : 'bg-white border-transparent text-gray-400 hover:border-black/10'
-                        }`}
-                      >
-                        <Icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                        <span className="text-[10px] font-bold uppercase tracking-tight text-center leading-tight">{type.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Destination Selector (Only for Checked) */}
-              {luggageType.isLinear && (
-                <div className="p-6 border-b border-black/5 bg-white">
-                  <label className="text-[11px] uppercase tracking-wider font-bold text-gray-400 mb-2 block">Destino / Aerolínea</label>
-                  <div className="relative">
-                    <button 
-                      onClick={() => setIsDestDropdownOpen(!isDestDropdownOpen)}
-                      className="w-full flex items-center justify-between bg-gray-50 border border-black/5 rounded-2xl px-4 py-3 text-left hover:border-black/10 transition-all"
+          
+          {/* Left Column: Inputs & Configuration */}
+          <div className="lg:col-span-7 space-y-8">
+            
+            {/* Type Selector */}
+            <section>
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-4">1. Tipo de Equipaje</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {LUGGAGE_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  const isActive = luggageType.id === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => setLuggageType(type)}
+                      className={`relative flex flex-col items-center justify-center gap-3 p-6 rounded-3xl border-2 transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-white border-zinc-900 shadow-sm' 
+                          : 'bg-white border-transparent hover:border-zinc-200 text-zinc-500 hover:text-zinc-900 shadow-sm'
+                      }`}
                     >
-                      <span className="font-semibold text-sm">{destination.name}</span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isDestDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {isDestDropdownOpen && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute z-20 w-full mt-2 bg-white border border-black/10 rounded-2xl shadow-2xl overflow-hidden"
-                        >
-                          {DESTINATIONS.map((dest) => (
-                            <button
-                              key={dest.id}
-                              onClick={() => {
-                                setDestination(dest);
-                                setIsDestDropdownOpen(false);
-                              }}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-black/5 last:border-0"
-                            >
-                              <div className="font-bold text-sm">{dest.name}</div>
-                              <div className="text-[10px] text-gray-400 uppercase font-medium">{dest.description}</div>
-                            </button>
-                          ))}
+                      {isActive && (
+                        <motion.div layoutId="active-indicator" className="absolute top-3 right-3">
+                          <div className="w-2 h-2 rounded-full bg-zinc-900" />
                         </motion.div>
                       )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              )}
+                      <Icon className={`w-8 h-8 ${isActive ? 'text-zinc-900' : ''}`} />
+                      <span className={`text-xs font-semibold text-center leading-tight ${isActive ? 'text-zinc-900' : ''}`}>
+                        {type.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
-              {/* Dimension Inputs */}
-              <div className="p-8 space-y-8">
+            {/* Dimension Inputs */}
+            <section>
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-4">
+                2. Medidas
+              </h2>
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-200 space-y-6">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 block flex items-center gap-1">
-                      <Ruler className="w-3 h-3" /> Largo ({lengthUnit})
+                    <label className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                      <Ruler className="w-3.5 h-3.5" /> Largo
                     </label>
-                    <input 
-                      type="number" 
-                      value={length || ''} 
-                      onChange={(e) => handleInputChange(setLength, e.target.value)}
-                      placeholder="0"
-                      className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-4 py-4 text-2xl font-bold focus:bg-white focus:border-black transition-all outline-none"
-                    />
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={length || ''} 
+                        onChange={(e) => handleInputChange(setLength, e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xl font-medium text-zinc-900 focus:bg-white focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-medium">{lengthUnit}</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 block flex items-center gap-1">
-                      <Ruler className="w-3 h-3" /> Ancho ({lengthUnit})
+                    <label className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                      <Ruler className="w-3.5 h-3.5" /> Ancho
                     </label>
-                    <input 
-                      type="number" 
-                      value={width || ''} 
-                      onChange={(e) => handleInputChange(setWidth, e.target.value)}
-                      placeholder="0"
-                      className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-4 py-4 text-2xl font-bold focus:bg-white focus:border-black transition-all outline-none"
-                    />
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={width || ''} 
+                        onChange={(e) => handleInputChange(setWidth, e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xl font-medium text-zinc-900 focus:bg-white focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-medium">{lengthUnit}</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 block flex items-center gap-1">
-                      <Ruler className="w-3 h-3" /> Alto ({lengthUnit})
+                    <label className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                      <Ruler className="w-3.5 h-3.5" /> Alto
                     </label>
-                    <input 
-                      type="number" 
-                      value={height || ''} 
-                      onChange={(e) => handleInputChange(setHeight, e.target.value)}
-                      placeholder="0"
-                      className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-4 py-4 text-2xl font-bold focus:bg-white focus:border-black transition-all outline-none"
-                    />
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={height || ''} 
+                        onChange={(e) => handleInputChange(setHeight, e.target.value)}
+                        placeholder="0"
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xl font-medium text-zinc-900 focus:bg-white focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all outline-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm font-medium">{lengthUnit}</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Weight Input */}
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400 block flex items-center gap-1">
-                    <Scale className="w-3 h-3" /> Peso ({weightUnit})
+                <div className="pt-6 border-t border-zinc-100">
+                  <label className="text-xs font-medium text-zinc-500 flex items-center gap-1.5 mb-2">
+                    <Scale className="w-3.5 h-3.5" /> Peso Total
                   </label>
                   <div className="relative">
                     <input 
@@ -268,99 +246,133 @@ export default function App() {
                       value={weight || ''} 
                       onChange={(e) => handleInputChange(setWeight, e.target.value)}
                       placeholder="0.0"
-                      className="w-full bg-gray-50 border-2 border-transparent rounded-2xl px-4 py-4 text-3xl font-bold focus:bg-white focus:border-black transition-all outline-none"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-4 text-2xl font-medium text-zinc-900 focus:bg-white focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 transition-all outline-none"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-xl">{weightUnit}</div>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-medium">{weightUnit}</span>
                   </div>
                 </div>
               </div>
-            </main>
+            </section>
           </div>
 
-          {/* Right Column: Results */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-black/5 sticky top-8">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Resumen de Viaje</h2>
+          {/* Right Column: Results Panel */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-[32px] p-8 shadow-sm border border-zinc-200 sticky top-24">
+              <h2 className="text-lg font-semibold text-zinc-900 mb-6">Análisis de Equipaje</h2>
               
               <div className="space-y-8">
-                {/* Linear/Dim Status */}
+                {/* Destination Selector (Only for Checked) - MOVED HERE */}
+                <AnimatePresence mode="wait">
+                  {luggageType.isLinear && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pb-6 border-b border-zinc-100">
+                        <label className="text-sm font-medium text-zinc-500 mb-2 block">Región / Aerolínea</label>
+                        <div className="relative">
+                          <select
+                            value={destination.id}
+                            onChange={(e) => setDestination(DESTINATIONS.find(d => d.id === e.target.value) || DESTINATIONS[0])}
+                            className="w-full appearance-none bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 pr-10 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+                          >
+                            {DESTINATIONS.map(d => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-2">{destination.description}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Size Status */}
                 <div>
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tamaño</span>
-                    <span className="text-xs font-bold">{luggageType.isLinear ? 'Lineal' : 'Dimensiones'}</span>
+                  <div className="flex justify-between items-end mb-1">
+                    <span className="text-sm font-medium text-zinc-500">{luggageType.isLinear ? 'Dimensión Lineal' : 'Dimensión Máxima'}</span>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                      validation.dimStatus === 'invalid' ? 'bg-red-100 text-red-700' : 
+                      validation.dimStatus === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      Límite: {luggageType.isLinear ? (unit === 'metric' ? destination.checkedLimitCm : destination.checkedLimitIn) : (unit === 'metric' ? luggageType.maxDim!.cm[0] : luggageType.maxDim!.in[0])} {lengthUnit}
+                    </span>
                   </div>
-                  <div className="text-3xl font-bold tracking-tight">
-                    {luggageType.isLinear ? totalLinear.toFixed(1) : `${Math.max(length, width, height).toFixed(0)} max`}
-                    <span className="text-sm text-gray-300 ml-1">{lengthUnit}</span>
-                  </div>
-                  <div className={`text-[10px] font-bold mt-1 ${
-                    validation.dimStatus === 'invalid' ? 'text-red-500' : 
-                    validation.dimStatus === 'warning' ? 'text-amber-500' : 'text-emerald-500'
-                  }`}>
-                    Límite: {luggageType.isLinear ? (unit === 'metric' ? destination.checkedLimitCm : destination.checkedLimitIn) : (unit === 'metric' ? luggageType.maxDim!.cm[0] : luggageType.maxDim!.in[0])} {lengthUnit}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-semibold tracking-tight text-zinc-900">
+                      {luggageType.isLinear ? totalLinear.toFixed(1) : `${Math.max(length, width, height).toFixed(0)}`}
+                    </span>
+                    <span className="text-lg text-zinc-400 font-medium">{lengthUnit}</span>
                   </div>
                 </div>
 
                 {/* Weight Status */}
                 <div>
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Peso</span>
-                    <span className="text-xs font-bold">{weightUnit.toUpperCase()}</span>
+                  <div className="flex justify-between items-end mb-1">
+                    <span className="text-sm font-medium text-zinc-500">Peso Actual</span>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                      validation.weightStatus === 'invalid' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      Límite: {unit === 'metric' ? luggageType.maxWeight.kg : luggageType.maxWeight.lb} {weightUnit}
+                    </span>
                   </div>
-                  <div className="text-3xl font-bold tracking-tight">
-                    {weight.toFixed(1)}
-                    <span className="text-sm text-gray-300 ml-1">{weightUnit}</span>
-                  </div>
-                  <div className={`text-[10px] font-bold mt-1 ${validation.weightStatus === 'invalid' ? 'text-red-500' : 'text-emerald-500'}`}>
-                    Límite: {unit === 'metric' ? luggageType.maxWeight.kg : luggageType.maxWeight.lb} {weightUnit}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-semibold tracking-tight text-zinc-900">
+                      {weight.toFixed(1)}
+                    </span>
+                    <span className="text-lg text-zinc-400 font-medium">{weightUnit}</span>
                   </div>
                 </div>
 
-                {/* Final Verdict */}
-                <div className={`p-6 rounded-[24px] border-2 transition-all ${
-                  totalLinear === 0 ? 'bg-gray-50 border-transparent' :
-                  validation.status === 'valid' ? 'bg-emerald-50 border-emerald-100' : 
-                  validation.status === 'warning' ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
+                {/* Final Verdict Card */}
+                <div className={`p-5 rounded-2xl border transition-all duration-300 ${
+                  totalLinear === 0 ? 'bg-zinc-50 border-zinc-200' :
+                  validation.status === 'valid' ? 'bg-emerald-50 border-emerald-200' : 
+                  validation.status === 'warning' ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'
                 }`}>
-                  <div className="flex items-center gap-3 mb-2">
-                    {totalLinear === 0 ? <Info className="w-5 h-5 text-gray-300" /> :
-                     validation.status === 'valid' ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : 
-                     validation.status === 'warning' ? <AlertCircle className="w-5 h-5 text-amber-500" /> : <AlertCircle className="w-5 h-5 text-red-500" />}
-                    <span className={`text-xs font-bold uppercase tracking-wider ${
-                      totalLinear === 0 ? 'text-gray-400' :
-                      validation.status === 'valid' ? 'text-emerald-700' : 
-                      validation.status === 'warning' ? 'text-amber-700' : 'text-red-700'
-                    }`}>
-                      {totalLinear === 0 ? 'Esperando datos' : 
-                       validation.status === 'valid' ? 'Aprobado' : 
-                       validation.status === 'warning' ? 'Advertencia' : 'Rechazado'}
-                    </span>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5">
+                      {totalLinear === 0 ? <Info className="w-5 h-5 text-zinc-400" /> :
+                       validation.status === 'valid' ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : 
+                       validation.status === 'warning' ? <AlertCircle className="w-5 h-5 text-amber-600" /> : <AlertCircle className="w-5 h-5 text-red-600" />}
+                    </div>
+                    <div>
+                      <h3 className={`text-sm font-semibold mb-1 ${
+                        totalLinear === 0 ? 'text-zinc-700' :
+                        validation.status === 'valid' ? 'text-emerald-800' : 
+                        validation.status === 'warning' ? 'text-amber-800' : 'text-red-800'
+                      }`}>
+                        {totalLinear === 0 ? 'Esperando medidas' : 
+                         validation.status === 'valid' ? 'Aprobado para viajar' : 
+                         validation.status === 'warning' ? 'Precaución requerida' : 'Excede los límites'}
+                      </h3>
+                      <p className={`text-sm leading-relaxed ${
+                        totalLinear === 0 ? 'text-zinc-500' :
+                        validation.status === 'valid' ? 'text-emerald-700/80' : 
+                        validation.status === 'warning' ? 'text-amber-700/80' : 'text-red-700/80'
+                      }`}>
+                        {validation.message}
+                      </p>
+                    </div>
                   </div>
-                  <p className={`text-sm font-bold leading-tight ${
-                    totalLinear === 0 ? 'text-gray-300' :
-                    validation.status === 'valid' ? 'text-emerald-900' : 
-                    validation.status === 'warning' ? 'text-amber-900' : 'text-red-900'
-                  }`}>
-                    {validation.message}
-                  </p>
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-black/5">
-                <p className="text-[10px] text-gray-400 leading-relaxed italic">
-                  * Los límites son referenciales. Verifica siempre con tu aerolínea específica antes de viajar.
+              <div className="mt-8 pt-6 border-t border-zinc-100 flex items-start gap-2 text-zinc-400">
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed">
+                  Los límites mostrados son referenciales. Las políticas pueden variar según la aerolínea, la tarifa o el nivel de viajero frecuente.
                 </p>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="mt-12 text-center">
-          <p className="text-[10px] text-gray-300 uppercase tracking-[0.2em] font-bold">PackCheck Pro • 2026 Edition</p>
-        </footer>
       </div>
     </div>
   );
 }
+
 
